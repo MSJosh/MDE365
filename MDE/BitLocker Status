@@ -1,0 +1,12 @@
+//Provides status of BitLocker on Drives and if they are enabled. 
+DeviceTvmSecureConfigurationAssessment
+| where ConfigurationId in ("scid-2090", "scid-2091")
+| summarize arg_max(Timestamp, IsCompliant, IsApplicable) by DeviceName, ConfigurationId
+| extend Test = case(
+    ConfigurationId == "scid-2090", "Encrypt all BitLocker-supported drives",
+    ConfigurationId == "scid-2091", "BitLocker has a drive not enabled",
+    "N/A"),
+    Result = case(IsApplicable == 0, "N/A", IsCompliant == 1, "GOOD", "BAD")
+| extend packed = pack(Test, Result)
+| summarize Tests = make_bag(packed) by DeviceName
+| evaluate bag_unpack(Tests)
