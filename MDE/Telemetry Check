@@ -1,0 +1,10 @@
+//This query will check if each device sent telemetry data within the last 24 hours
+DeviceInfo
+| distinct DeviceId,DeviceName
+| join kind=leftouter (
+    DeviceEvents
+    | where Timestamp >= ago(24h)
+    | summarize EventCount = count() by DeviceId
+) on DeviceId
+| extend SentTelemetryInLast24Hours = iif(isnull(EventCount), "NO", "YES")
+| project DeviceName, DeviceId, SentTelemetryInLast24Hours
