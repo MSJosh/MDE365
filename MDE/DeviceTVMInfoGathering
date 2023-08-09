@@ -1,0 +1,11 @@
+DeviceTvmInfoGathering
+//| where OSPlatform in ("Linux")
+| where LastSeenTime >= ago(7d)
+| join (DeviceInfo | where isnotempty(OSVersion) |summarize arg_max(Timestamp, *) by DeviceId) on DeviceId
+| where OnboardingStatus == "Onboarded"
+| extend AvMode = iif(tostring(AdditionalFields.AvMode) == '0', 'Active', iif(tostring(AdditionalFields.AvMode) == '1', 'Passive',iif(tostring(AdditionalFields.AvMode) == '2', 'Disabled', iif(tostring(AdditionalFields.AvMode) == '5', 'PassiveAudit',iif(tostring(AdditionalFields.AvMode) == '4', 'EDR Block Mode' ,'Unknown')))))  
+| extend PlatformVersion =tostring(AdditionalFields.AvPlatformVersion)
+| extend SignatureVersion = tostring(AdditionalFields.AvSignatureVersion)
+| extend EngineVersion = tostring(AdditionalFields.AvEngineVersion)
+| where AvMode != "Unknown" and isnotempty(PlatformVersion)
+| project DeviceName, OSPlatform, AvMode,OSVersion, LastSeenTime, PlatformVersion, SignatureVersion, LastSigUpdate = AdditionalFields.AvSignatureUpdateTime , EngineVersion
